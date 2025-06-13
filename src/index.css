@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+ .hover\:shadow-glow-cyan:hover {
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
+  }
