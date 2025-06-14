@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   ChevronRight,
   User,
@@ -12,24 +12,78 @@ import {
   Zap,
   Wallet,
   Shield,
+  Clock,
+  Users,
 } from "lucide-react";
 import { Election } from "../types/election";
 import { UserVoteHistory } from "../types/user";
 import { useAuth } from "../hooks/useAuth";
 import axios from "axios";
+import { API_ROUTES } from "../config/api";
+
+const ElectionCard: React.FC<{ election: Election }> = ({ election }) => (
+  <div className="p-6 rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/50 transition-all duration-500">
+    <div className="flex items-start justify-between mb-4">
+      <div>
+        <h3 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+          {election.title}
+        </h3>
+        <p className="text-gray-400 text-sm mb-2">{election.description}</p>
+        <div className="flex items-center text-sm text-gray-400">
+          <Clock size={14} className="mr-1" />
+          {new Date(election.startDate).toLocaleDateString()} -{" "}
+          {new Date(election.endDate).toLocaleDateString()}
+        </div>
+      </div>
+      <div className="px-3 py-1 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
+        <span className="text-sm font-medium text-green-300">Active</span>
+      </div>
+    </div>
+
+    {election.transactionHash && (
+      <div className="flex items-center space-x-2 text-sm text-blue-300 mb-4">
+        <span className="font-mono">
+          Tx: {election.transactionHash.substring(0, 8)}...
+          {election.transactionHash.substring(
+            election.transactionHash.length - 6
+          )}
+        </span>
+        <a
+          href={`https://sepolia.etherscan.io/tx/${election.transactionHash}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 transition-colors"
+        >
+          <ExternalLink size={14} />
+        </a>
+      </div>
+    )}
+
+    <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center text-sm text-gray-400">
+        <Users size={14} className="mr-1" />
+        {election.totalVotes} votes
+      </div>
+      <Link
+        to={`/election/${election.id}`}
+        className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 border border-blue-500/30 hover:border-blue-400/50 text-white hover:scale-105 transition-all duration-300"
+      >
+        View Election
+      </Link>
+    </div>
+  </div>
+);
 
 const DashboardPage: FC = () => {
   const navigate = useNavigate();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { currentUser } = useAuth();
   const [elections, setElections] = useState<Election[]>([]);
-
   const [selectedElection, setSelectedElection] = useState<Election | null>(
     null
   );
-
-  // const [pastElections] = useState<Election[]>([]);
   const [voteHistory] = useState<UserVoteHistory[]>([]);
 
   useEffect(() => {
@@ -39,12 +93,13 @@ const DashboardPage: FC = () => {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
-  const API_BASE = "http://localhost:5000/api/election";
 
   const fetchElections = useCallback(async () => {
     try {
       const address = currentUser?.walletAddress;
-      const response = await axios.post(`${API_BASE}/all`, { address });
+      const response = await axios.post(`${API_ROUTES.ELECTION}/all`, {
+        address,
+      });
       const data = await response.data;
 
       if (!Array.isArray(data)) {
@@ -53,12 +108,15 @@ const DashboardPage: FC = () => {
 
       setElections(data);
       setLoading(false);
+      setIsInitialLoad(false);
 
       if (data.length > 0 && !selectedElection) {
         setSelectedElection(data[0]);
       }
     } catch (err) {
       console.error("Error fetching elections:", err);
+      setLoading(false);
+      setIsInitialLoad(false);
     }
   }, [currentUser?.walletAddress, selectedElection]);
 
@@ -67,13 +125,13 @@ const DashboardPage: FC = () => {
       await fetchElections();
     };
     fetchData();
-  }, [fetchElections, selectedElection]);
+  }, [fetchElections]);
 
   const activeElections = elections.filter((e) => e.isStarted && !e.isEnded);
   const upcomingElections = elections.filter((e) => e.isNotStarted);
   const pastElections = elections.filter((e) => e.isEnded);
 
-  if (loading) {
+  if (loading && isInitialLoad) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="relative">
@@ -181,69 +239,7 @@ const DashboardPage: FC = () => {
               {activeElections.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {activeElections.map((election) => (
-                    <div
-                      key={election.id}
-                      className="group relative cursor-pointer"
-                      onClick={() => navigate(`/election/${election.id}`)}
-                    >
-                      <div className="relative p-6 rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/50 transition-all duration-500 hover:transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25">
-                        {/* Type Indicator */}
-                        <div
-                          className={`absolute top-0 left-0 w-full h-1 rounded-t-3xl ${
-                            election.type === "general"
-                              ? "bg-gradient-to-r from-blue-500 to-cyan-500"
-                              : election.type === "department"
-                              ? "bg-gradient-to-r from-purple-500 to-pink-500"
-                              : "bg-gradient-to-r from-orange-500 to-red-500"
-                          }`}
-                        ></div>
-
-                        {/* Gradient Overlay */}
-                        <div
-                          className={`absolute inset-0 rounded-3xl bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${
-                            election.type === "general"
-                              ? "from-blue-500 to-cyan-500"
-                              : election.type === "department"
-                              ? "from-purple-500 to-pink-500"
-                              : "from-orange-500 to-red-500"
-                          }`}
-                        ></div>
-
-                        <div className="relative">
-                          <div className="flex justify-between items-start mb-4">
-                            <h3 className="text-xl font-bold text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-cyan-400 group-hover:bg-clip-text transition-all duration-300 line-clamp-2">
-                              {election.title}
-                            </h3>
-                            <span
-                              className={`px-3 py-1 text-xs font-medium rounded-full capitalize ${
-                                election.type === "general"
-                                  ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                                  : election.type === "department"
-                                  ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                  : "bg-orange-500/20 text-orange-300 border border-orange-500/30"
-                              }`}
-                            >
-                              {election.type}
-                            </span>
-                          </div>
-
-
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center text-blue-400">
-                              <BarChart2 size={18} className="mr-2" />
-                              <span className="font-medium">
-                                {election.totalVotes || 0} votes
-                              </span>
-                            </div>
-
-                          </div>
-                        </div>
-
-                        {/* Hover Effect Lines */}
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      </div>
-                    </div>
+                    <ElectionCard key={election.id} election={election} />
                   ))}
                 </div>
               ) : (

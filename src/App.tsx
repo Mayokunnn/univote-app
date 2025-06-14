@@ -8,6 +8,7 @@ import ElectionPage from "./pages/ElectionPage";
 import AdminPage from "./pages/AdminPage";
 import { useAuth } from "./hooks/useAuth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import DashboardPage from "./pages/DashboardPage";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App: FC = () => {
         </main>
         <Footer />
       </div>
+      <ReactQueryDevtools initialIsOpen={false}  />
     </QueryClientProvider>
   );
 };

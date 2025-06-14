@@ -11,7 +11,18 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <AuthProvider>
         <App />
-        <Toaster position="top-center" />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: "rgba(17, 24, 39, 0.8)",
+              backdropFilter: "blur(8px)",
+              color: "#fff",
+              border: "1px solid rgba(75, 85, 99, 0.3)",
+            },
+            className: "font-sans",
+          }}
+        />
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>

@@ -1,10 +1,14 @@
-export type ElectionStatus = boolean
-export type ElectionType = 'General' | 'Departmental' | 'Residential' | 'Program';
+export type ElectionStatus = boolean;
+export type ElectionType =
+  | "General"
+  | "Departmental"
+  | "Residential"
+  | "Program";
 
 export interface Election {
   id: number;
   title: string;
-  type: 'General' | 'Departmental' | 'Residential' | 'Program' | string;
+  type: "General" | "Departmental" | "Residential" | "Program" | string;
   isStarted: boolean;
   isEnded: boolean;
   isNotStarted: boolean;
@@ -13,10 +17,10 @@ export interface Election {
   description: string;
   totalVotes: number;
   bannerImage?: string;
+  transactionHash?: string;
   createdAt?: string;
   updatedAt?: string;
 }
-
 
 export interface Candidate {
   id: number;
@@ -30,6 +34,7 @@ export interface Candidate {
   manifesto: string;
   walletAddress: string;
   candidateAddress: string;
+  transactionHash?: string;
   createdAt: string;
   updatedAt: string;
 }

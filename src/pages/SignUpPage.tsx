@@ -1,11 +1,16 @@
 import { FC, useState, useEffect, FormEvent } from "react";
-import { Link, CheckCircle, AlertCircle, ArrowRight, Shield, Zap } from "lucide-react";
+import {
+  Link,
+  CheckCircle,
+  AlertCircle,
+  ArrowRight,
+  Shield,
+  Zap,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router";
 import axios from "axios";
-
-const BASE_URL = "http://localhost:5000";
-
+import { API_ROUTES } from "../config/api";
 
 const SignUpPage: FC = () => {
   const navigate = useNavigate();
@@ -23,13 +28,12 @@ const SignUpPage: FC = () => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
   useEffect(() => {
     if (currentUser && currentUser.walletAddress) {
-      // navigate("/dashboard");
       console.log("Would navigate to dashboard");
     }
   }, [currentUser]);
@@ -44,7 +48,7 @@ const SignUpPage: FC = () => {
     setError(null);
 
     if (!validateMatricNumber(matricNumber)) {
-      setError("Invalid matric number format. Should be like: 21CG029830");
+      setError("Invalid matric number format. Should be like: 21CG029970");
       return;
     }
 
@@ -55,7 +59,7 @@ const SignUpPage: FC = () => {
     }, 1500);
   };
 
-const handleConnectWallet = async () => {
+  const handleConnectWallet = async () => {
     setIsConnecting(true);
     setError(null);
 
@@ -68,10 +72,9 @@ const handleConnectWallet = async () => {
         const request = {
           walletAddress: walletAddress,
           matricNumber: matricNumber,
+        };
 
-        }
-
-        const { data } = await axios.post(`${BASE_URL}/api/user/register`, request);
+        const { data } = await axios.post(API_ROUTES.USER.REGISTER, request);
 
         if (data.user) {
           login({
@@ -105,27 +108,27 @@ const handleConnectWallet = async () => {
         {/* Gradient Orbs */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-600/20 to-green-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        
+
         {/* Grid Pattern */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/5 to-transparent">
-          <div 
+          <div
             className="absolute inset-0 opacity-20"
             style={{
               backgroundImage: `
                 linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
               `,
-              backgroundSize: '50px 50px'
+              backgroundSize: "50px 50px",
             }}
           ></div>
         </div>
 
         {/* Mouse Follow Gradient */}
-        <div 
+        <div
           className="absolute w-96 h-96 bg-gradient-radial from-blue-500/10 to-transparent rounded-full pointer-events-none transition-all duration-300 blur-xl"
           style={{
             left: mousePosition.x - 192,
-            top: mousePosition.y - 192
+            top: mousePosition.y - 192,
           }}
         ></div>
       </div>
@@ -137,7 +140,9 @@ const handleConnectWallet = async () => {
           {/* Web3 Badge */}
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 backdrop-blur-sm mb-6">
             <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-            <span className="text-sm font-medium text-blue-300">Secure Web3 Authentication</span>
+            <span className="text-sm font-medium text-blue-300">
+              Secure Web3 Authentication
+            </span>
           </div>
 
           {/* Logo */}
@@ -149,7 +154,8 @@ const handleConnectWallet = async () => {
             VERIFY & CONNECT
           </h1>
           <p className="text-lg text-gray-300 leading-relaxed">
-            Join the decentralized future of student governance with blockchain-powered identity verification.
+            Join the decentralized future of student governance with
+            blockchain-powered identity verification.
           </p>
         </div>
 
@@ -158,13 +164,16 @@ const handleConnectWallet = async () => {
           <div className="p-8 rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 hover:border-gray-600/80 transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10">
             {/* Gradient Overlay */}
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            
+
             {/* Content */}
             <div className="relative">
               {!isValidated ? (
                 <div className="space-y-6">
                   <div>
-                    <label htmlFor="matricNumber" className="block text-sm font-semibold text-white mb-3">
+                    <label
+                      htmlFor="matricNumber"
+                      className="block text-sm font-semibold text-white mb-3"
+                    >
                       Student ID (Matric Number)
                     </label>
                     <div className="relative">
@@ -175,12 +184,16 @@ const handleConnectWallet = async () => {
                         required
                         placeholder="e.g. 21CG029830"
                         value={matricNumber}
-                        onChange={(e) => setMatricNumber(e.target.value.toUpperCase())}
+                        onChange={(e) =>
+                          setMatricNumber(e.target.value.toUpperCase())
+                        }
                         className="w-full px-4 py-4 text-white placeholder-gray-400 bg-gray-900/50 border border-gray-600/50 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300 backdrop-blur-sm hover:border-gray-500/70"
                       />
                       <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-cyan-500/0 hover:from-blue-500/5 hover:to-cyan-500/5 pointer-events-none transition-all duration-300"></div>
                     </div>
-                    <p className="mt-2 text-sm text-gray-400">Format: 21CG029830 (no spaces)</p>
+                    <p className="mt-2 text-sm text-gray-400">
+                      Format: 21CG029830 (no spaces)
+                    </p>
                   </div>
 
                   {error && (
@@ -216,7 +229,9 @@ const handleConnectWallet = async () => {
                   {/* Success Message */}
                   <div className="flex items-center justify-center p-6 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl border border-green-500/30">
                     <CheckCircle className="text-green-400 mr-3 h-6 w-6" />
-                    <span className="text-green-300 font-semibold text-lg">Student ID Verified Successfully</span>
+                    <span className="text-green-300 font-semibold text-lg">
+                      Student ID Verified Successfully
+                    </span>
                   </div>
 
                   {/* Divider */}
@@ -225,7 +240,9 @@ const handleConnectWallet = async () => {
                       <div className="w-full border-t border-gray-600/50"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-gradient-to-r from-gray-800 to-gray-900 text-gray-400 rounded-full">Next Step</span>
+                      <span className="px-4 bg-gradient-to-r from-gray-800 to-gray-900 text-gray-400 rounded-full">
+                        Next Step
+                      </span>
                     </div>
                   </div>
 
@@ -236,7 +253,8 @@ const handleConnectWallet = async () => {
                         Connect Web3 Wallet
                       </h3>
                       <p className="text-gray-300 mb-6">
-                        Connect your MetaMask wallet to complete blockchain verification and access the platform.
+                        Connect your MetaMask wallet to complete blockchain
+                        verification and access the platform.
                       </p>
                     </div>
 
@@ -245,11 +263,15 @@ const handleConnectWallet = async () => {
                         <div className="p-4 bg-gradient-to-r from-gray-900/60 to-gray-800/30 rounded-2xl border border-gray-600/50">
                           <div className="flex items-center mb-2">
                             <Zap className="w-5 h-5 text-green-400 mr-2" />
-                            <span className="text-sm font-semibold text-green-400">Wallet Connected</span>
+                            <span className="text-sm font-semibold text-green-400">
+                              Wallet Connected
+                            </span>
                           </div>
-                          <p className="text-white font-mono text-sm break-all">{walletAddress}</p>
+                          <p className="text-white font-mono text-sm break-all">
+                            {walletAddress}
+                          </p>
                         </div>
-                        
+
                         <button
                           onClick={() => navigate("/dashboard")}
                           className="group w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-semibold text-lg transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/25 hover:scale-105"

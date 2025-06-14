@@ -1,7 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { FC, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, User, Check, Clock, Info, BarChart2 } from "lucide-react";
+import {
+  ChevronLeft,
+  User,
+  Check,
+  Clock,
+  Info,
+  BarChart2,
+  ExternalLink,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { Election, Candidate } from "../types/election";
 import {
@@ -84,6 +92,93 @@ const VoteConfirmation: FC<VoteConfirmationProps> = ({
   </div>
 );
 
+const ElectionStatus: React.FC<{
+  election: Election;
+  candidates: Candidate[];
+  voteSuccess: boolean;
+}> = ({ election, candidates, voteSuccess }) => {
+  const { currentUser } = useAuth();
+  // Fetch voter info to check if user has voted
+  const { data: voterInfo } = useVoterInfo(
+    election?.id || 0,
+    currentUser?.walletAddress || ""
+  );
+  return (
+    <div className="rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 p-6 sticky top-6 hover:border-blue-500/50 transition-all duration-500">
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-4">
+        Election Status
+      </h2>
+      <div className="space-y-2 mb-6">
+        <div className="flex justify-between">
+          <span className="text-gray-400">Total Votes</span>
+          <span className="font-medium text-white">{election.totalVotes}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Candidates</span>
+          <span className="font-medium text-white">{candidates.length}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Status</span>
+          <span className="font-medium text-white">
+            {election.isStarted && !election.isEnded && "Started"}
+            {election.isEnded && "Ended"}
+            {election.isNotStarted && "Not Started"}
+          </span>
+        </div>
+        {election.transactionHash && (
+          <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-700/50">
+            <span className="text-gray-400">Transaction</span>
+            <div className="flex items-center space-x-2">
+              <span className="font-mono text-sm text-blue-300">
+                {election.transactionHash.substring(0, 8)}...
+                {election.transactionHash.substring(
+                  election.transactionHash.length - 6
+                )}
+              </span>
+              <a
+                href={`https://sepolia.etherscan.io/tx/${election.transactionHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {election.isStarted && !voterInfo?.hasVoted && currentUser && (
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-500/30 mb-4">
+          <p className="text-sm text-blue-300">
+            You are eligible to vote in this election. Review the candidates and
+            cast your vote below.
+          </p>
+        </div>
+      )}
+
+      {voterInfo?.hasVoted && (
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-green-900/20 to-emerald-900/10 border border-green-500/30 mb-4 flex items-start">
+          <Check size={20} className="text-green-400 mr-2 mt-0.5" />
+          <p className="text-sm text-green-300">
+            You have already voted in this election. Your vote has been recorded
+            on the blockchain.
+          </p>
+        </div>
+      )}
+
+      {voteSuccess && (
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-green-900/20 to-emerald-900/10 border border-green-500/30 mb-4 flex items-start">
+          <Check size={20} className="text-green-400 mr-2 mt-0.5" />
+          <p className="text-sm text-green-300">
+            Your vote has been successfully recorded! Thank you for
+            participating.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
 const ElectionPage: FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -161,12 +256,21 @@ const ElectionPage: FC = () => {
 
   const handleVoteClick = (candidate: Candidate) => {
     if (!currentUser) {
+      showMessage("Please connect your wallet to vote in this election", true);
       navigate("/signup");
       return;
     }
 
+    if (!window.ethereum) {
+      showMessage("Please install MetaMask to vote in this election", true);
+      return;
+    }
+
     if (voterInfo?.hasVoted) {
-      showMessage("You have already voted in this election.", true);
+      showMessage(
+        "You have already voted in this election. Each wallet can only vote once.",
+        true
+      );
       return;
     }
 
@@ -175,7 +279,10 @@ const ElectionPage: FC = () => {
   };
 
   const handleConfirmVote = () => {
-    if (!selectedCandidate || !election || !currentUser) return;
+    if (!selectedCandidate || !election || !currentUser) {
+      showMessage("Unable to process vote. Please try again.", true);
+      return;
+    }
 
     voteMutation.mutate(
       {
@@ -200,8 +307,11 @@ const ElectionPage: FC = () => {
             setVoteSuccess(false);
           }, 5000);
         },
-        onError: () => {
-          showMessage("Failed to submit your vote. Please try again.", true);
+        onError: (error: Error) => {
+          showMessage(
+            error.message || "Failed to submit your vote. Please try again.",
+            true
+          );
         },
         onSettled: () => {
           setShowConfirmation(false);
@@ -419,20 +529,21 @@ const ElectionPage: FC = () => {
                               {candidate.name}
                             </span>
                             <span className="text-gray-300 font-medium">
-                              {candidate.voteCount} votes
+                              {candidate.voteCount || 0} votes
                             </span>
                           </div>
                           <div className="w-full bg-gray-700/50 rounded-full h-2.5">
                             <div
                               className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2.5 rounded-full"
                               style={{
-                                width: `${
-                                  election.totalVotes
-                                    ? ((candidate.voteCount || 0) /
-                                        election.totalVotes) *
-                                      100
-                                    : 0
-                                }%`,
+                                width:
+                                  candidate.voteCount && election.totalVotes
+                                    ? `${(
+                                        (candidate.voteCount /
+                                          election.totalVotes) *
+                                        100
+                                      ).toFixed(2)}%`
+                                    : "0%",
                               }}
                             ></div>
                           </div>
@@ -445,62 +556,11 @@ const ElectionPage: FC = () => {
           </div>
 
           <div>
-            <div className="rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 p-6 sticky top-6 hover:border-blue-500/50 transition-all duration-500">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-4">
-                Election Status
-              </h2>
-              <div className="space-y-2 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Votes</span>
-                  <span className="font-medium text-white">
-                    {election.totalVotes}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Candidates</span>
-                  <span className="font-medium text-white">
-                    {candidates.length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Status</span>
-                  <span className="font-medium text-white">
-                    {election.isStarted && !election.isEnded && "Started"}
-                    {election.isEnded && "Ended"}
-                    {election.isNotStarted && "Not Started"}
-                  </span>
-                </div>
-              </div>
-
-              {election.isStarted && !voterInfo?.hasVoted && currentUser && (
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-500/30 mb-4">
-                  <p className="text-sm text-blue-300">
-                    You are eligible to vote in this election. Review the
-                    candidates and cast your vote below.
-                  </p>
-                </div>
-              )}
-
-              {voterInfo?.hasVoted && (
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-green-900/20 to-emerald-900/10 border border-green-500/30 mb-4 flex items-start">
-                  <Check size={20} className="text-green-400 mr-2 mt-0.5" />
-                  <p className="text-sm text-green-300">
-                    You have already voted in this election. Your vote has been
-                    recorded on the blockchain.
-                  </p>
-                </div>
-              )}
-
-              {voteSuccess && (
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-green-900/20 to-emerald-900/10 border border-green-500/30 mb-4 flex items-start">
-                  <Check size={20} className="text-green-400 mr-2 mt-0.5" />
-                  <p className="text-sm text-green-300">
-                    Your vote has been successfully recorded! Thank you for
-                    participating.
-                  </p>
-                </div>
-              )}
-            </div>
+            <ElectionStatus
+              election={election}
+              candidates={fetchedCandidates}
+              voteSuccess={voteSuccess}
+            />
           </div>
         </div>
 

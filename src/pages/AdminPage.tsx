@@ -10,6 +10,7 @@ import {
   Clock,
   BarChart2,
   Vote,
+  ExternalLink,
 } from "lucide-react";
 import { Candidate, Election } from "../types/election";
 import {
@@ -24,6 +25,53 @@ import {
   showMessage,
 } from "../api/elections";
 
+const AdminActionCard: React.FC<{
+  title: string;
+  description: string;
+  action: () => void;
+  isLoading: boolean;
+  txHash?: string;
+  disabled : boolean
+}> = ({ title, description, action, isLoading, txHash , disabled}) => (
+  <div className="p-6 rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/50 transition-all duration-500">
+    <h3 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+      {title}
+    </h3>
+    <p className="text-gray-400 mb-4">{description}</p>
+
+    {txHash && (
+      <div className="flex items-center space-x-2 text-sm text-blue-300 mb-4">
+        <span className="font-mono">
+          Tx: {txHash.substring(0, 8)}...{txHash.substring(txHash.length - 6)}
+        </span>
+        <a
+          href={`https://sepolia.etherscan.io/tx/${txHash}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 transition-colors"
+        >
+          <ExternalLink size={14} />
+        </a>
+      </div>
+    )}
+
+    <button
+      onClick={action}
+      disabled={isLoading || disabled}
+      className="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 border border-blue-500/30 hover:border-blue-400/50 text-white hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {isLoading ? (
+        <div className="flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+          Processing...
+        </div>
+      ) : (
+        title
+      )}
+    </button>
+  </div>
+);
+
 export default function AdminPage() {
   const [selectedElection, setSelectedElection] = useState<Election | null>(
     null
@@ -34,6 +82,11 @@ export default function AdminPage() {
   const [electionType, setElectionType] = useState("general");
   const [allowedValues, setAllowedValues] = useState<string[]>([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [txHashes, setTxHashes] = useState<{
+    start?: string;
+    end?: string;
+  }>({});
 
   const departments = ["Computer and Information Science"];
   const programs = [
@@ -82,6 +135,13 @@ export default function AdminPage() {
     }
   }, [elections, selectedElection]);
 
+  // Handle initial load
+  useEffect(() => {
+    if (!electionsLoading) {
+      setIsInitialLoad(false);
+    }
+  }, [electionsLoading]);
+
   // Handle errors
   useEffect(() => {
     if (electionsError) {
@@ -92,7 +152,25 @@ export default function AdminPage() {
     }
   }, [electionsError, candidatesError]);
 
-  if (electionsLoading && elections.length === 0) {
+  const handleStartElection = () => {
+    if (!selectedElection) return;
+    startElectionMutation.mutate(selectedElection.id, {
+      onSuccess: (response) => {
+        setTxHashes((prev) => ({ ...prev, start: response.txHash }));
+      },
+    });
+  };
+
+  const handleEndElection = () => {
+    if (!selectedElection) return;
+    endElectionMutation.mutate(selectedElection.id, {
+      onSuccess: (response) => {
+        setTxHashes((prev) => ({ ...prev, end: response.txHash }));
+      },
+    });
+  };
+
+  if (electionsLoading && isInitialLoad) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="relative">
@@ -353,50 +431,22 @@ export default function AdminPage() {
                     </h2>
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <button
-                      onClick={() =>
-                        startElectionMutation.mutate(selectedElection.id)
-                      }
-                      disabled={
-                        startElectionMutation.isPending ||
-                        selectedElection.isStarted ||
-                        candidates.length === 0
-                      }
-                      className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 border border-blue-500/30 hover:border-blue-400/50 text-white hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {startElectionMutation.isPending ? (
-                        <div className="flex items-center">
-                          <div className="inset-0 w-6 h-6 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin animate-reverse"></div>
-                        </div>
-                      ) : (
-                        <>
-                          <Play className="w-5 h-5" />
-                          Activate Voting
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() =>
-                        endElectionMutation.mutate(selectedElection.id)
-                      }
-                      disabled={
-                        endElectionMutation.isPending ||
-                        !selectedElection.isStarted ||
-                        selectedElection.isEnded
-                      }
-                      className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-br from-red-600 to-red-500 border border-red-500/30 hover:border-red-400/50 text-white hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {endElectionMutation.isPending ? (
-                        <div className="flex items-center">
-                          <div className="inset-0 w-6 h-6 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin animate-reverse"></div>
-                        </div>
-                      ) : (
-                        <>
-                          <Square className="h-5 w-5" />
-                          Finalize Election
-                        </>
-                      )}
-                    </button>
+                    <AdminActionCard
+                      title="Start Election"
+                      description="Begin the election process and allow voters to cast their votes."
+                      action={handleStartElection}
+                      isLoading={startElectionMutation.isPending}
+                      txHash={txHashes.start}
+                      disabled={selectedElection?.isStarted}
+                    />
+                    <AdminActionCard
+                      title="End Election"
+                      description="Conclude the election and calculate the final results."
+                      action={handleEndElection}
+                      isLoading={endElectionMutation.isPending }
+                      txHash={txHashes.end}
+                      disabled={selectedElection?.isEnded}
+                    />
                   </div>
                   {!selectedElection.isStarted && candidates.length === 0 && (
                     <p className="text-sm text-gray-400 mt-4 text-center">
@@ -542,7 +592,7 @@ export default function AdminPage() {
                 </div>
               </>
             ) : (
-              <div className="rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 p-12 text-center hover:border-blue-500/50 transition-all duration-500">
+              <div className="rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700 p-12 text-center hover:border-blue-500/50 transition-all duration-500">
                 <Vote className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
                   No Contract Selected
