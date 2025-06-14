@@ -1,9 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import {
   Plus,
-  Play,
-  Square,
   Users,
   Trophy,
   Shield,
@@ -31,8 +28,8 @@ const AdminActionCard: React.FC<{
   action: () => void;
   isLoading: boolean;
   txHash?: string;
-  disabled : boolean
-}> = ({ title, description, action, isLoading, txHash , disabled}) => (
+  disabled: boolean;
+}> = ({ title, description, action, isLoading, txHash, disabled }) => (
   <div className="p-6 rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/50 transition-all duration-500">
     <h3 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
       {title}
@@ -443,7 +440,7 @@ export default function AdminPage() {
                       title="End Election"
                       description="Conclude the election and calculate the final results."
                       action={handleEndElection}
-                      isLoading={endElectionMutation.isPending }
+                      isLoading={endElectionMutation.isPending}
                       txHash={txHashes.end}
                       disabled={selectedElection?.isEnded}
                     />

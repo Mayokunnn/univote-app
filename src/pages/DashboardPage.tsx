@@ -12,7 +12,6 @@ import {
   Zap,
   Wallet,
   Shield,
-  Clock,
   Users,
 } from "lucide-react";
 import { Election } from "../types/election";
@@ -29,11 +28,6 @@ const ElectionCard: React.FC<{ election: Election }> = ({ election }) => (
           {election.title}
         </h3>
         <p className="text-gray-400 text-sm mb-2">{election.description}</p>
-        <div className="flex items-center text-sm text-gray-400">
-          <Clock size={14} className="mr-1" />
-          {new Date(election.startDate).toLocaleDateString()} -{" "}
-          {new Date(election.endDate).toLocaleDateString()}
-        </div>
       </div>
       <div className="px-3 py-1 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
         <span className="text-sm font-medium text-green-300">Active</span>
