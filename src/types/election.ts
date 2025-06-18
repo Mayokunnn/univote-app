@@ -20,6 +20,7 @@ export interface Election {
   transactionHash?: string;
   createdAt?: string;
   updatedAt?: string;
+  allowedValues?: string[]
 }
 
 export interface Candidate {

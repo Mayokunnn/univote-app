@@ -602,7 +602,10 @@ const ElectionPage: FC = () => {
                     {election &&
                       election.isStarted &&
                       !voterInfo?.hasVoted &&
-                      currentUser && (
+                      currentUser &&
+                      election?.allowedValues?.includes(
+                        currentUser?.department || currentUser?.program
+                      ) && (
                         <button
                           onClick={() => handleVoteClick(candidate)}
                           disabled={voteMutation.isPending}
