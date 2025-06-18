@@ -434,7 +434,7 @@ export default function AdminPage() {
                       action={handleStartElection}
                       isLoading={startElectionMutation.isPending}
                       txHash={txHashes.start}
-                      disabled={selectedElection?.isStarted || candidates}
+                      disabled={selectedElection?.isStarted || candidates.length === 0}
                     />
                     <AdminActionCard
                       title="End Election"
