@@ -434,7 +434,7 @@ export default function AdminPage() {
                       action={handleStartElection}
                       isLoading={startElectionMutation.isPending}
                       txHash={txHashes.start}
-                      disabled={selectedElection?.isStarted}
+                      disabled={selectedElection?.isStarted || candidates}
                     />
                     <AdminActionCard
                       title="End Election"
@@ -442,7 +442,7 @@ export default function AdminPage() {
                       action={handleEndElection}
                       isLoading={endElectionMutation.isPending}
                       txHash={txHashes.end}
-                      disabled={selectedElection?.isEnded}
+                      disabled={selectedElection?.isEnded || !selectedElection?.isStarted}
                     />
                   </div>
                   {!selectedElection.isStarted && candidates.length === 0 && (

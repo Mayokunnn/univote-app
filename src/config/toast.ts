@@ -19,6 +19,14 @@ const toastIcons = {
   loading: "⟳",
 };
 
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.info("Transaction hash copied to clipboard");
+  } catch {
+    toast.error("Failed to copy to clipboard");
+  }
+};
 // Custom toast function
 export const showToast = {
   success: (message: string) => {
@@ -51,16 +59,26 @@ export const showToast = {
   },
   // Special Web3 transaction toast
   transaction: (message: string, hash?: string) => {
-    const content = hash
-      ? `${message}\nTx: ${hash.substring(0, 8)}...${hash.substring(
-          hash.length - 6
-        )}`
-      : message;
+    if (!hash) {
+      toast.success(message, {
+        className: toastStyles.success,
+        icon: toastIcons.success,
+        duration: 8000,
+      });
+      return;
+    }
 
-    toast.success(content, {
+    const shortHash = `${hash.slice(0, 8)}...${hash.slice(-6)}`;
+
+    toast.success(message, {
       className: toastStyles.success,
       icon: toastIcons.success,
       duration: 8000,
+      description: `Tx: ${shortHash}`,
+      action: {
+        label: "Copy",
+        onClick: () => copyToClipboard(hash),
+      },
     });
   },
 };

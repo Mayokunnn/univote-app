@@ -32,6 +32,7 @@ export const showMessage = (message: string, isError = false) => {
 // Core API Functions
 const fetchElections = async () => {
   const response = await axios.post(`${API_BASE}/all`, { address });
+  console.log(response.data);
   return response.data;
 };
 
@@ -173,6 +174,7 @@ const createElection = async ({
     allowedValues,
     address,
   });
+  console.log(response.data.election);
   return response.data.election; // Election
 };
 
@@ -270,7 +272,7 @@ export const useCreateElection = () => {
   return useMutation({
     mutationFn: createElection,
     onSuccess: (response: ElectionResponse) => {
-      showToast.transaction(response.message, response.txHash);
+      showToast.transaction("Election created succesfully", response.txHash);
       queryClient.invalidateQueries({ queryKey: ["elections"] });
       queryClient.setQueryData(["election", response.election.id], {
         ...response.election,
